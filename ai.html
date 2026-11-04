@@ -1,0 +1,420 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Pay Rakshak — Backend</title>
+<style>
+*{box-sizing:border-box}
+body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;background:#f6f7f9;color:#111827}
+header{max-width:960px;margin:0 auto;padding:28px 24px 8px;display:flex;justify-content:space-between;align-items:baseline}
+header h1{margin:0;font-size:30px;letter-spacing:-.02em}
+header span{color:#6b7280;font-size:14px;font-weight:600}
+main{max-width:960px;margin:0 auto;padding:16px 24px 32px;display:grid;gap:16px}
+.card{background:#fff;border:1px solid #e5e7eb;border-radius:16px;padding:22px;animation:fadeUp .45s ease both}
+.card:nth-child(2){animation-delay:.06s}.card:nth-child(3){animation-delay:.12s}.card:nth-child(4){animation-delay:.18s}
+@keyframes fadeUp{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+h2{margin:0 0 16px;font-size:18px;letter-spacing:-.01em}
+h3{margin:20px 0 10px;font-size:15px}
+button{border:0;border-radius:10px;padding:10px 16px;font-weight:700;cursor:pointer;background:#111827;color:#fff;margin:0 8px 8px 0;transition:transform .15s ease,background .15s ease}
+button:hover{transform:translateY(-1px);background:#1f2937}
+button.secondary{background:#eef2f7;color:#111827}
+button.secondary:hover{background:#e5e7eb}
+table{width:100%;border-collapse:collapse;font-size:14px}
+th{text-align:left;color:#6b7280;font-weight:600;padding:10px 8px;border-bottom:1px solid #e5e7eb}
+td{padding:10px 8px;border-bottom:1px solid #f3f4f6;vertical-align:top}
+td:last-child{text-align:right}
+tr.clickable{cursor:pointer;transition:background .15s ease}
+tr.clickable:hover{background:#f9fafb}
+.score{font-size:44px;font-weight:800;line-height:1;letter-spacing:-.03em}
+.pill{display:inline-block;padding:6px 12px;border-radius:999px;font-weight:800;font-size:13px;color:#fff}
+.allow{background:#15803d}.warn{background:#d97706}.block{background:#dc2626}
+.bar{height:10px;background:#eef2f7;border-radius:999px;overflow:hidden}
+.fill{height:100%;border-radius:999px;transition:width .8s ease}
+.meter-row{display:flex;gap:24px;align-items:center;flex-wrap:wrap;margin:16px 0}
+.muted{color:#6b7280;font-size:13px}
+.inspect-wrap{background:#f9fafb;border:1px solid #e5e7eb;border-radius:12px;padding:16px;margin-top:4px}
+.inspect-table{width:100%;border-collapse:collapse;background:#fff;border:1px solid #e5e7eb;border-radius:8px;overflow:hidden}
+.inspect-table th{text-align:left !important;padding:10px 12px;border-bottom:1px solid #e5e7eb;background:#f3f4f6;font-size:13px}
+.inspect-table th:nth-child(2){text-align:center !important}
+.inspect-table th:nth-child(4){text-align:right !important}
+.inspect-table td{text-align:left !important;padding:10px 12px;border-bottom:1px solid #f3f4f6;vertical-align:top}
+.inspect-table td:nth-child(1){width:22%}
+.inspect-table td:nth-child(2){width:10%;text-align:center !important}
+.inspect-table td:nth-child(3){width:56%}
+.inspect-table td:nth-child(4){width:12%;text-align:right !important;font-weight:700}
+.inspect-table tfoot td{border-top:2px solid #111827;border-bottom:0;font-weight:800;background:#f9fafb}
+.inspect-table tfoot td:last-child{text-align:right !important}
+.inspect-wrap h4{margin:20px 0 8px;font-size:14px;color:#374151;letter-spacing:.01em}
+.inspect-wrap h4:first-of-type{margin-top:16px}
+.inspect-wrap h3{margin:0 0 4px;font-size:17px}
+.inspect-table tbody tr:nth-child(even){background:#f9fafb}
+.inspect-table{margin-bottom:4px}
+.db-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:16px;margin-top:16px}
+.db-box{background:#f9fafb;border:1px solid #e5e7eb;border-radius:12px;padding:16px}
+.db-box h3{margin:0 0 4px;font-size:16px}
+.db-box .db-sub{color:#6b7280;font-size:13px;margin-bottom:10px}
+.db-box table{width:100%;border-collapse:collapse;background:#fff;border:1px solid #e5e7eb;border-radius:8px;overflow:hidden}
+.db-box th{text-align:left;padding:8px 10px;border-bottom:1px solid #e5e7eb;background:#f3f4f6;font-size:12px}
+.db-box td{text-align:left !important;padding:8px 10px;border-bottom:1px solid #f3f4f6;font-size:13px}
+.db-box td:last-child{text-align:right !important}
+.db-scroll{overflow-x:auto}
+.hidden{display:none}
+footer{max-width:960px;margin:0 auto;padding:0 24px 28px;color:#9ca3af;font-size:12px}
+@media(max-width:640px){header,main{padding-left:16px;padding-right:16px}td:last-child{text-align:left}}
+</style>
+<script src="https://unpkg.com/mqtt/dist/mqtt.min.js"></script>
+</head>
+<body>
+<header><h1>Pay Rakshak</h1><span><button onclick="toggleDatabase()" style="margin:0">Database</button> &nbsp; Backend</span></header>
+<main>
+<div style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:4px"><button onclick="toggleDatabase()" style="margin:0">Database</button><button class="secondary" onclick="window.location.href=appUrl()" style="margin:0">Back to app</button></div>
+<section class="card hidden" id="databaseSection">
+<h2>Database — Account Holders</h2>
+<div class="db-scroll"><table><thead><tr><th>#</th><th>Name</th><th>Age</th><th>UPI ID</th><th>Opening Date</th><th>Bank</th><th>Balance</th><th>Risk</th><th>Status</th></tr></thead><tbody id="dbSummary"></tbody></table></div>
+<div class="db-grid" id="dbBoxes"></div>
+</section>
+
+<section class="card">
+<h2>Transaction</h2>
+<div id="txSummary"></div>
+<div class="meter-row">
+<div><div class="score" id="riskScore">—</div><div class="muted">Risk / 100</div><div class="bar" style="width:240px;margin-top:10px"><div class="fill" id="riskFill" style="width:0%"></div></div></div>
+<div><div class="score" id="relScore">—</div><div class="muted">Reliability / 100</div><div class="muted" id="relBand" style="margin-top:8px"></div></div>
+<div><span class="pill allow" id="decisionPill">—</span><div class="muted" style="margin-top:8px">Reliability = 100 − Risk</div></div>
+</div>
+<div style="margin-top:8px">
+<button class="secondary" onclick="window.location.href=appUrl()">Back to app</button>
+</div>
+</section>
+
+<section class="card">
+<h2>Feature contributions</h2>
+<table><thead><tr><th>Technique</th><th>Points</th></tr></thead><tbody id="breakdown"></tbody></table>
+<h3>Reasons</h3>
+<ul id="fullReasons" style="margin:8px 0;padding-left:20px;line-height:1.6"></ul>
+</section>
+
+<section class="card">
+<h2>Payment stats</h2>
+<table><thead><tr><th>Field</th><th>Value</th></tr></thead><tbody id="statsTable"></tbody></table>
+</section>
+
+<section class="card">
+<h2>Payments</h2>
+<p class="muted" id="liveStatus">Live sync: connecting… (open this page on the laptop, then pay on the phone)</p>
+<table><thead><tr><th>Time</th><th>Receiver</th><th>Amount</th><th>Risk</th><th>Decision</th><th>Inspect</th></tr></thead><tbody id="paymentHistory"></tbody></table>
+<div style="margin-top:14px">
+<button class="secondary" onclick="renderHistory(null)">Refresh</button>
+<button class="secondary" onclick="clearHistory()">Clear</button>
+</div>
+</section>
+</main>
+<footer>Demo data</footer>
+
+<script>
+var APP_URL="";
+function appUrl(){if(window.location.protocol==='file:' || window.location.hostname==='localhost' || window.location.hostname==='127.0.0.1') return 'index.html'; return APP_URL || 'index.html';}
+var PRESETS={
+collect:{name:"Refund Help",upi:"refund-help@okhdfc",amount:18500,risk:92,reliability:8,decision:"SUCCESS",cls:"allow",short:"Low reliability: new account with no payment history, and a collect request for an unusually large amount.",breakdown:[["Rule-based detection",30],["Machine learning classification",28],["Anomaly detection",22],["Graph-based detection",12]],reasons:["NEW payee — never paid before","Approving a collect request SENDS money out — receiving money never needs a PIN","Amount is far above the usual payment","Caller claimed to be bank support — classic impersonation pattern"],backend:{senderAccountDate:"15 Jan 2022",senderAvg:340,senderPayments:"312 payments",receiverAccountDate:"2 days ago (1 Nov 2026)",receiverPayments:"0 past payments",sim:"Same SIM",device:"Same device",pinReset:"No",channel:"Collect request",velocity:"1 transfer in 10 minutes",split:"1 account",graph:"No fan-out — single new payee"}},
+simswap:{name:"Unknown Account",upi:"unknown-acct@okicici",amount:49999,risk:96,reliability:4,decision:"SUCCESS",cls:"allow",short:"Very low reliability: SIM and device changed just before this large payment.",breakdown:[["Rule-based detection",32],["Machine learning classification",28],["Anomaly detection",24],["Graph-based detection",12]],reasons:["New SIM + new device + PIN reset within minutes","Immediate high-value transfer after the reset","One signal alone can be normal — all four together is a takeover pattern"],backend:{senderAccountDate:"15 Jan 2022",senderAvg:340,senderPayments:"312 payments",receiverAccountDate:"Unknown / new account",receiverPayments:"0 past payments",sim:"CHANGED TODAY",device:"NEW device",pinReset:"YES — minutes ago",channel:"Pay",velocity:"1 transfer in 10 minutes",split:"1 account",graph:"No fan-out — takeover pattern"}},
+mule:{name:"6 New Accounts",upi:"6 new accounts",amount:60000,risk:94,reliability:6,decision:"SUCCESS",cls:"allow",short:"Low reliability: money splitting fast to 6 brand-new accounts.",breakdown:[["Rule-based detection",28],["Machine learning classification",26],["Anomaly detection",20],["Graph-based detection",20]],reasons:["One payment fanning out to many new accounts in minutes","None of the 6 payees has any history with the user","Fan-out is how stolen money is hidden fast"],backend:{senderAccountDate:"15 Jan 2022",senderAvg:340,senderPayments:"312 payments",receiverAccountDate:"All 6 created within the last 7 days",receiverPayments:"0 past payments to any of the 6",sim:"Same SIM",device:"Same device",pinReset:"No",channel:"Pay (split)",velocity:"6 transfers in 4 minutes",split:"6 accounts",graph:"FAN-OUT: 1 → 6 new accounts in 4 minutes"}},
+normal:{name:"Kirana Store",upi:"kirana-store@okaxis",amount:240,risk:8,reliability:92,decision:"SUCCESS",cls:"allow",short:"High reliability: regular receiver with 40 past payments and a normal amount.",breakdown:[["Rule-based detection",2],["Machine learning classification",3],["Anomaly detection",2],["Graph-based detection",1]],reasons:["Known payee, paid many times before","Amount close to the usual ₹200–₹400","Normal time, same device, no new SIM"],backend:{senderAccountDate:"15 Jan 2022",senderAvg:340,senderPayments:"312 payments",receiverAccountDate:"12 Mar 2021",receiverPayments:"40 past payments",sim:"Same SIM",device:"Same device",pinReset:"No",channel:"Pay",velocity:"1 transfer in 10 minutes",split:"1 account",graph:"No fan-out — single known payee"}}
+};
+function el(id){return document.getElementById(id);}
+function bandFor(score){if(score>=80) return "Excellent"; if(score>=60) return "Good"; if(score>=40) return "Low"; return "Very Low";}
+function riskColor(risk){return risk<=30?"#15803d":risk<=60?"#d97706":"#dc2626";}
+
+
+function otpShortMessageBackend(data){
+  var key=data.preset||"";
+  if(!key){
+    var u=(data.upi||"").toLowerCase();
+    if(u.indexOf("refund")>=0) key="collect";
+    else if(u.indexOf("mule")>=0 || (data.name||"").indexOf("6 New")>=0) key="mule";
+  }
+  if(key==="collect" || key==="mule") return "New account with Multiple Money Requests";
+  return "This user was reported multiple times";
+}
+function otpWarningText(data){
+  if(data.otpMessage) return data.otpMessage;
+  if(data.risk>=61) return otpShortMessageBackend(data);
+  return "—";
+}
+
+function riskyReasonForBackend(data){
+  var key=data.preset||"";
+  if(!key){
+    var u=(data.upi||"").toLowerCase();
+    if(u.indexOf("refund")>=0) key="collect";
+    else if(u.indexOf("unknown")>=0) key="simswap";
+    else if(u.indexOf("mule")>=0 || (data.name||"").indexOf("6 New")>=0) key="mule";
+    else if(u.indexOf("kirana")>=0) key="normal";
+  }
+  if(key==="collect") return "Risky to pay because this user was reported multiple times — 3 verified fraud complaints from 3 different users — and approving a collect request sends money out.";
+  if(key==="simswap") return "Risky to pay because this user was reported multiple times, the SIM changed today, this is a new device, and the PIN was reset minutes before this large transfer.";
+  if(key==="mule") return "Risky to pay because this user was reported multiple times and \u20B960,000 is splitting to 6 newly created accounts within 4 minutes.";
+  if(key==="normal" && data.amount>10000) return "Risky to pay because this user was reported multiple times for large, unusual payments, and this amount is far above your usual \u20B9200–\u20B9400 payment to this shop.";
+  if(!key) return "Risky to pay because this user was reported multiple times and there is no payment history for this receiver — this is your first payment to them.";
+  return "Risky to pay because this user was reported multiple times and "+(data.reasons && data.reasons[0] ? data.reasons[0] : "this receiver is new and the amount is unusual.");
+}
+function riskReasonText(data){
+  if(data.riskyReason) return data.riskyReason;
+  if(data.risk>=61) return riskyReasonForBackend(data);
+  return "—";
+}
+
+
+function dbRecordText(data){
+  try{
+    var h=null; for(var i=0;i<DB_HOLDERS.length;i++){if(DB_HOLDERS[i].name===data.name){h=DB_HOLDERS[i];break;}}
+    if(!h) return "—";
+    return "Yes — Age "+h.age+", UPI "+h.upi+", Opening "+h.opening+", "+h.bank+", "+h.status;
+  }catch(e){return "—";}
+}
+
+function render(data){
+  var _otp=(data.otpVerified || data.risk>=61)?"Yes":"No";
+  el("txSummary").innerHTML="<table><tbody><tr><td>Receiver</td><td>"+data.name+"</td></tr><tr><td>Database record</td><td>"+dbRecordText(data)+"</td></tr><tr><td>UPI</td><td>"+data.upi+"</td></tr><tr><td>Amount</td><td>₹"+data.amount.toLocaleString("en-IN")+"</td></tr><tr><td>Time</td><td>"+(data.time||new Date().toLocaleString())+"</td></tr><tr><td>OTP verified</td><td>"+_otp+"</td></tr><tr><td>OTP warning</td><td>"+otpWarningText(data)+"</td></tr><tr><td>Risk reason</td><td>"+riskReasonText(data)+"</td></tr></tbody></table>";
+  el("riskScore").textContent=data.risk+"/100";
+  var f=el("riskFill"); if(f){f.style.width=data.risk+"%"; f.style.background=riskColor(data.risk);}
+  var pill=el("decisionPill"); pill.textContent=data.decision; pill.className="pill "+data.cls;
+  el("breakdown").innerHTML=data.breakdown.map(function(b){return "<tr><td>"+b[0]+"</td><td>"+b[1]+"</td></tr>";}).join("");
+  el("fullReasons").innerHTML=data.reasons.map(function(r){return "<li>"+r+"</li>";}).join("");
+  var b=data.backend||{};
+  var rows=[["Sender account",b.senderAccountDate],["Sender average payment","₹"+b.senderAvg],["Sender history",b.senderPayments],["Receiver account",b.receiverAccountDate],["Receiver past payments",b.receiverPayments],["SIM",b.sim],["Device",b.device],["PIN reset",b.pinReset],["Channel",b.channel],["Velocity",b.velocity],["Split",b.split],["Graph",b.graph]];
+  el("statsTable").innerHTML=rows.map(function(r){return "<tr><td>"+r[0]+"</td><td>"+r[1]+"</td></tr>";}).join("");
+  var rel=Math.max(1,Math.min(100,100-data.risk));
+  el("relScore").textContent=rel;
+  el("relBand").textContent=bandFor(rel);
+  renderHistory(data);
+}
+function getHistory(){try{return JSON.parse(localStorage.getItem("upiFraudPaymentHistory")||"[]");}catch(e){return [];}}
+function renderHistory(currentData){
+  var list=getHistory();
+  if(window._histFromUrl && window._histFromUrl.length){
+    window._histFromUrl.forEach(function(h){
+      if(!list.some(function(x){return (h.id && x.id===h.id) || (x.time===h.time && x.amount===h.amount && x.upi===h.upi);})) list.unshift(h);
+    });
+  }
+  if(currentData && currentData.fromApp!==false){
+    var exists=list.some(function(h){return (currentData.id && h.id===currentData.id) || (h.time===currentData.time && h.amount===currentData.amount && h.upi===currentData.upi);});
+    if(!exists) list.unshift(currentData);
+  }
+  window._hist=list;
+  var box=el("paymentHistory"); if(!box) return;
+  if(!list.length){box.innerHTML="<tr><td colspan='6'>No payments yet</td></tr>"; return;}
+  box.innerHTML=list.map(function(h,i){return "<tr class='clickable' onclick='loadHistoryItem("+i+")'><td>"+(h.time||"")+"</td><td>"+h.name+"</td><td>₹"+h.amount+"</td><td>"+h.risk+"/100</td><td>"+h.decision+"</td><td><button class='secondary' style='margin:0' onclick='event.stopPropagation();toggleInspect("+i+")'>Inspect</button></td></tr><tr id='inspectRow-"+i+"' style='display:none'><td colspan='6'><div id='inspect-"+i+"'></div></td></tr>";}).join("");
+}
+function loadHistoryItem(i){var h=window._hist[i]; if(h){h.fromApp=true; render(h);}}
+function clearHistory(){try{localStorage.removeItem("upiFraudPaymentHistory");}catch(e){} window._histFromUrl=[]; renderHistory(null);}
+function showEmpty(){
+  el("txSummary").innerHTML="<table><tbody><tr><td>Receiver</td><td>—</td></tr><tr><td>UPI</td><td>—</td></tr><tr><td>Amount</td><td>—</td></tr><tr><td>Time</td><td>—</td></tr><tr><td>OTP verified</td><td>—</td></tr></tbody></table>";
+  el("riskScore").textContent="—";
+  var f=el("riskFill"); if(f){f.style.width="0%";}
+  var pill=el("decisionPill"); pill.textContent="—"; pill.className="pill allow";
+  el("breakdown").innerHTML="";
+  el("fullReasons").innerHTML="";
+  el("statsTable").innerHTML="";
+  el("relScore").textContent="—";
+  el("relBand").textContent="";
+  renderHistory(null);
+}
+
+var AI_WEIGHTS=[15,20,15,15,10,10,10,5];
+var AI_CATS=["User & Account Reputation","Transaction Behaviour","Receiver Reputation","Device & SIM Intelligence","Location & Time Intelligence","Payment & Scam Pattern Detection","Network & Relationship Analysis","User Reports & Community Intelligence"];
+var AI_TEMPLATES={
+collect:[
+"Sender: Aditya, account since 15 Jan 2022, 312 payments. Receiver: created 1 Nov 2026, 0 payments, 3 verified fraud complaints from 3 different users in 7 days.",
+"Amount ₹18,500 vs usual ₹200–₹500. First payment to this receiver. Time 2:47 AM, outside the usual daytime pattern.",
+"Receiver reported for fraud, 3 complaints verified, linked to 2 other reported accounts.",
+"Device: Adi's device, first collect approval from this device in 30 days. SIM: same SIM, no PIN reset — the approval itself is the risk.",
+"Last location: College of Engineering Phaltan, Maharashtra. This transaction: Pune, 180 km away, 12 minutes after a Phaltan transaction.",
+"Collect request: user asked to approve a payment pretending to be a refund. Receiving money never needs a PIN.",
+"Receiver connected to a suspicious account network, money to be forwarded within minutes of receipt.",
+"Reports: 6 total, 3 verified, from 3 unique reporters, all in the last 7 days, same refund scam type."],
+simswap:[
+"Sender: Aditya, account since 15 Jan 2022, clean history. Receiver: unknown / new account, 0 payments, 2 verified complaints.",
+"Amount ₹49,999 vs usual ₹200–₹500. First payment to this receiver, immediate transfer after account changes.",
+"Receiver: new, no history, 1 verified complaint, linked to a reported account cluster.",
+"Device: NOT Adi's device — new device. SIM: CHANGED TODAY. PIN reset minutes ago. Takeover signals together.",
+"Last location: College of Engineering Phaltan, Maharashtra. This transaction: Delhi, 2 minutes later — impossible travel.",
+"Impersonation pattern: caller claimed bank support, urged immediate transfer, urgency tactic used.",
+"Receiver connected to 1 suspicious account cluster, money to be moved onward within minutes.",
+"Reports: 5 in the last 48 hours from different users, 4 verified."],
+mule:[
+"Sender: Aditya, 312 payments. Receivers: all 6 created within the last 7 days, 0 clean history.",
+"Amount ₹60,000 split into 6 parts, 6 transfers in 4 minutes vs usual 1 transfer in 10 minutes.",
+"Receivers: 6 new accounts, 0 past payments, 2 verified complaints across the group.",
+"Device: Adi's device. SIM: same SIM. No PIN reset, but a 6-way split on one device in minutes is unusual.",
+"Location: College of Engineering Phaltan, Maharashtra, but 6 receivers in different cities in 4 minutes — rapid geographical spread.",
+"Money splitting to hide origin — known mule pattern, urgency to complete all 6 transfers quickly.",
+"Network: 1 → 6 fan-out, all 6 accounts linked to each other, money circulating within the group.",
+"Reports: 4 naming 2 of the 6 accounts, 3 verified in the last week."],
+normal:[
+"Sender: Aditya, account since 15 Jan 2022, 312 payments, no fraud reports. Receiver: Kirana Store, since 12 Mar 2021.",
+"Amount ₹240 vs usual ₹200–₹400. 40th payment to this receiver, normal daytime timing.",
+"Receiver: 40 past payments, 0 reports, clean history.",
+"Device: Adi's device, same device as last 312 payments. SIM: same SIM. No PIN reset.",
+"Location: College of Engineering Phaltan, Maharashtra — matches the last 40 transactions.",
+"No collect request, no QR scam, no refund claim, no impersonation signal.",
+"Network: single known payee, no fan-out, no mule links.",
+"Reports: 0 complaints, 0 verified."]
+};
+var AI_POINTS={collect:[13,19,14,13,8,10,10,5],simswap:[14,20,13,15,9,10,10,5],mule:[14,19,14,13,9,10,10,5],normal:[1,2,1,1,1,1,1,0]};
+function aiCalcFor(data){
+  var key=data.preset||"";
+  if(!key){
+    var u=(data.upi||"").toLowerCase();
+    if(u.indexOf("refund")>=0) key="collect";
+    else if(u.indexOf("unknown")>=0) key="simswap";
+    else if(u.indexOf("mule")>=0 || (data.name||"").indexOf("6 New")>=0) key="mule";
+    else if(u.indexOf("kirana")>=0) key="normal";
+  }
+  if(key && AI_TEMPLATES[key]){
+    return AI_CATS.map(function(c,i){return {cat:c,weight:AI_WEIGHTS[i],obs:AI_TEMPLATES[key][i],pts:AI_POINTS[key][i]};});
+  }
+  var risk=data.risk||0;
+  var pts=AI_WEIGHTS.map(function(w){return Math.round(w*risk/100);});
+  var sum=pts.reduce(function(a,b){return a+b;},0);
+  var idx=1;
+  while(sum<risk){pts[idx]++; sum++; idx=(idx+1)%pts.length;}
+  while(sum>risk){for(var j=0;j<pts.length;j++){if(pts[j]>0){pts[j]--; sum--; break;}}}
+  var time=data.time||"";
+  var obs=[
+    "Sender: Aditya, account since 15 Jan 2022, 312 payments. Receiver: "+data.name+" ("+data.upi+"), no clean payment history found.",
+    "Amount ₹"+data.amount+" vs usual ₹200–₹500. First payment to this receiver.",
+    "Receiver: "+data.name+", 0 past payments, 1 unverified report, 0 verified complaints yet.",
+    "Device: Adi's device, same device as last payments. SIM: same SIM. No PIN reset.",
+    "Location: College of Engineering Phaltan, Maharashtra — transaction location differs from the last known location. Time: "+time+".",
+    "No collect request or impersonation signal found, but a new receiver with a large amount is itself a scam-pattern flag.",
+    "Network: single receiver, no fan-out found, no mule links confirmed yet.",
+    "Reports: 3 total, 2 verified, from 3 different users — this user was reported multiple times. Verified complaints carry more weight than unverified reports."];
+  return AI_CATS.map(function(c,i){return {cat:c,weight:AI_WEIGHTS[i],obs:obs[i],pts:pts[i]};});
+}
+function toggleInspect(i){
+  var row=el("inspectRow-"+i); if(!row) return;
+  var wasHidden=row.style.display==="none" || !row.style.display;
+  var hist=window._hist||[];
+  for(var j=0;j<hist.length;j++){var r=el("inspectRow-"+j); if(r) r.style.display="none";}
+  if(!wasHidden) return;
+  var h=hist[i]; if(!h) return;
+  var calc=aiCalcFor(h);
+  var total=calc.reduce(function(a,b){return a+b.pts;},0);
+  var rel=Math.max(1,Math.min(100,100-total));
+  var otp=(h.otpVerified || h.risk>=61)?"Yes":"No";
+  var b=h.backend||{};
+  var stats=[["Sender account",b.senderAccountDate||"—"],["Sender average payment",b.senderAvg?"₹"+b.senderAvg:"—"],["Sender history",b.senderPayments||"—"],["Receiver account",b.receiverAccountDate||"—"],["Receiver past payments",b.receiverPayments||"—"],["SIM",b.sim||"—"],["Device",b.device||"—"],["PIN reset",b.pinReset||"—"],["Channel",b.channel||"—"],["Velocity",b.velocity||"—"],["Split",b.split||"—"],["Graph",b.graph||"—"]];
+  var box=el("inspect-"+i); if(!box) return;
+  box.innerHTML="<div class='inspect-wrap'>"
+    +"<h3>"+h.name+"</h3>"
+    +"<h4>1 &nbsp; Transaction</h4><table class='inspect-table'><thead><tr><th>Field</th><th>Value</th></tr></thead><tbody>"
+    +"<tr><td>Receiver</td><td>"+h.name+"</td></tr>"
+    +"<tr><td>Database record</td><td>"+dbRecordText(h)+"</td></tr>"
+    +"<tr><td>UPI</td><td>"+h.upi+"</td></tr>"
+    +"<tr><td>Amount</td><td>₹"+h.amount+"</td></tr>"
+    +"<tr><td>Time</td><td>"+(h.time||"—")+"</td></tr>"
+    +"<tr><td>Decision</td><td>"+h.decision+"</td></tr>"
+    +"<tr><td>OTP verified</td><td>"+otp+"</td></tr>"
+    +"<tr><td>OTP warning</td><td>"+otpWarningText(h)+"</td></tr>"
+    +"<tr><td>Risk reason</td><td>"+riskReasonText(h)+"</td></tr></tbody></table>"
+    +"<h4>2 &nbsp; Risk &amp; Reliability</h4><table class='inspect-table'><thead><tr><th>Score</th><th>Value</th></tr></thead><tbody>"
+    +"<tr><td>Risk</td><td>"+h.risk+"/100</td></tr>"
+    +"<tr><td>Reliability</td><td>"+rel+"/100</td></tr>"
+    +"<tr><td>Formula</td><td>Reliability = 100 − Risk</td></tr></tbody></table>"
+    +"<h4>3 &nbsp; Feature contributions</h4><table class='inspect-table'><thead><tr><th>Technique</th><th>Points</th></tr></thead><tbody>"
+    +(h.breakdown||[]).map(function(x){return "<tr><td>"+x[0]+"</td><td>"+x[1]+"</td></tr>";}).join("")+"</tbody></table>"
+    +"<h4>4 &nbsp; Payment stats</h4><table class='inspect-table'><thead><tr><th>Field</th><th>Value</th></tr></thead><tbody>"
+    +stats.map(function(r){return "<tr><td>"+r[0]+"</td><td>"+r[1]+"</td></tr>";}).join("")+"</tbody></table>"
+    +"<h4>5 &nbsp; Reasons</h4><table class='inspect-table'><thead><tr><th>No.</th><th>Reason</th></tr></thead><tbody>"
+    +(h.reasons||[]).map(function(r,idx){return "<tr><td>"+(idx+1)+"</td><td>"+r+"</td></tr>";}).join("")+"</tbody></table>"
+    +"<h4>6 &nbsp; How AI calculated the score</h4><table class='inspect-table'><thead><tr><th>Category</th><th>Weight</th><th>Observation</th><th>Points</th></tr></thead><tbody>"
+    +calc.map(function(r){return "<tr><td>"+r.cat+"</td><td>"+r.weight+"</td><td>"+r.obs+"</td><td>"+r.pts+"</td></tr>";}).join("")+"</tbody><tfoot><tr><td colspan='3'>Total risk</td><td>"+total+"/100</td></tr><tr><td colspan='3'>Reliability — Reliability = 100 − Risk</td><td>"+rel+"/100</td></tr></tfoot></table>"
+    +"</div>";
+  row.style.display="table-row";
+}
+
+
+var DB_HOLDERS=[
+{name:"Ananya Deshmukh",age:28,gender:"Female",dob:"12 Mar 1998",upi:"ananya.d@okhdfc",acct:"****4521",ifsc:"HDFC0001234",bank:"HDFC Bank",branch:"Phaltan",city:"Phaltan, Maharashtra",type:"Savings",opening:"18 Jan 2019",balance:45230,txns:412,last:"2 Nov 2026",risk:12,reports:"0 / 0",status:"Active"},
+{name:"Rohit Patil",age:34,gender:"Male",dob:"5 Jul 1992",upi:"rohit.p@okaxis",acct:"****7890",ifsc:"UTIB0000456",bank:"Axis Bank",branch:"Phaltan",city:"Phaltan, Maharashtra",type:"Savings",opening:"23 Aug 2017",balance:128400,txns:689,last:"3 Nov 2026",risk:18,reports:"0 / 0",status:"Active"},
+{name:"Sneha Kulkarni",age:24,gender:"Female",dob:"21 Sep 2002",upi:"sneha.k@oksbi",acct:"****2314",ifsc:"SBIN0007890",bank:"State Bank of India",branch:"Phaltan",city:"Phaltan, Maharashtra",type:"Savings",opening:"9 Feb 2021",balance:18750,txns:203,last:"1 Nov 2026",risk:9,reports:"0 / 0",status:"Active"},
+{name:"Vikram Jadhav",age:41,gender:"Male",dob:"14 Nov 1984",upi:"vikram.j@okicici",acct:"****6654",ifsc:"ICIC0002345",bank:"ICICI Bank",branch:"Pune",city:"Pune, Maharashtra",type:"Current",opening:"30 May 2015",balance:342800,txns:1240,last:"3 Nov 2026",risk:22,reports:"1 / 0",status:"Active"},
+{name:"Priya Nair",age:29,gender:"Female",dob:"8 Apr 1997",upi:"priya.n@okhdfc",acct:"****9087",ifsc:"HDFC0005678",bank:"HDFC Bank",branch:"Phaltan",city:"Phaltan, Maharashtra",type:"Savings",opening:"11 Dec 2020",balance:67400,txns:521,last:"2 Nov 2026",risk:15,reports:"0 / 0",status:"Active"},
+{name:"Arjun Mehta",age:36,gender:"Male",dob:"19 Jan 1990",upi:"arjun.m@okaxis",acct:"****1123",ifsc:"UTIB0000789",bank:"Axis Bank",branch:"Mumbai",city:"Mumbai, Maharashtra",type:"Savings",opening:"27 Jun 2018",balance:98450,txns:845,last:"3 Nov 2026",risk:88,reports:"6 / 4",status:"Flagged"},
+{name:"Kavya Sharma",age:22,gender:"Female",dob:"3 Aug 2004",upi:"kavya.s@oksbi",acct:"****3345",ifsc:"SBIN0001122",bank:"State Bank of India",branch:"Phaltan",city:"Phaltan, Maharashtra",type:"Savings",opening:"15 Mar 2022",balance:12300,txns:156,last:"31 Oct 2026",risk:11,reports:"0 / 0",status:"Active"},
+{name:"Manish Gupta",age:48,gender:"Male",dob:"26 Feb 1978",upi:"manish.g@okicici",acct:"****7765",ifsc:"ICIC0003456",bank:"ICICI Bank",branch:"Pune",city:"Pune, Maharashtra",type:"Current",opening:"4 Oct 2014",balance:512600,txns:1890,last:"3 Nov 2026",risk:20,reports:"0 / 0",status:"Active"},
+{name:"Divya Reddy",age:31,gender:"Female",dob:"17 Jun 1995",upi:"divya.r@okhdfc",acct:"****9901",ifsc:"HDFC0009012",bank:"HDFC Bank",branch:"Phaltan",city:"Phaltan, Maharashtra",type:"Savings",opening:"22 Sep 2019",balance:78900,txns:634,last:"2 Nov 2026",risk:74,reports:"3 / 2",status:"Under Review"},
+{name:"Sanjay Verma",age:55,gender:"Male",dob:"9 Dec 1970",upi:"sanjay.v@oksbi",acct:"****5567",ifsc:"SBIN0003344",bank:"State Bank of India",branch:"Phaltan",city:"Phaltan, Maharashtra",type:"Savings",opening:"13 Apr 2013",balance:428900,txns:2105,last:"1 Nov 2026",risk:14,reports:"0 / 0",status:"Active"}
+];
+function statusCls(s){return s==="Flagged"?"block":s==="Under Review"?"warn":"allow";}
+function renderDatabase(){
+  var sum=el("dbSummary"); if(sum) sum.innerHTML=DB_HOLDERS.map(function(h,i){return "<tr><td>"+(i+1)+"</td><td>"+h.name+"</td><td>"+h.age+"</td><td>"+h.upi+"</td><td>"+h.opening+"</td><td>"+h.bank+"</td><td>₹"+h.balance.toLocaleString("en-IN")+"</td><td>"+h.risk+"/100</td><td>"+h.status+"</td></tr>";}).join("");
+  var boxes=el("dbBoxes"); if(!boxes) return;
+  boxes.innerHTML=DB_HOLDERS.map(function(h){
+    var rows=[["Name",h.name],["Age",h.age],["Gender",h.gender],["Date of Birth",h.dob],["UPI ID",h.upi],["Account Number",h.acct],["IFSC",h.ifsc],["Bank",h.bank],["Branch",h.branch],["City",h.city],["Account Type",h.type],["Account Opening Date",h.opening],["Balance","₹"+h.balance.toLocaleString("en-IN")],["Total Transactions",h.txns],["Last Transaction",h.last],["Risk Score",h.risk+"/100"],["Reliability",(100-h.risk)+"/100"],["Fraud Reports (Total / Verified)",h.reports],["Status",h.status]];
+    return "<div class='db-box'><h3>"+h.name+"</h3><div class='db-sub'>Age "+h.age+" · "+h.bank+" · "+h.branch+"</div><table><thead><tr><th>Field</th><th>Value</th></tr></thead><tbody>"+rows.map(function(r){return "<tr><td>"+r[0]+"</td><td>"+r[1]+"</td></tr>";}).join("")+"</tbody></table><div style='margin-top:10px'><span class='pill "+statusCls(h.status)+"'>"+h.status+"</span></div></div>";
+  }).join("");
+}
+function toggleDatabase(){
+  var s=el("databaseSection"); if(!s) return;
+  var hidden=s.classList.contains("hidden");
+  s.classList.toggle("hidden",!hidden);
+  if(hidden){renderDatabase(); s.scrollIntoView();}
+}
+
+
+function handleLivePayment(data){
+  try{
+    if(!data || !data.id) return;
+    var list=getHistory();
+    if(list.some(function(h){return h.id===data.id;})) return;
+    list.unshift(data);
+    try{localStorage.setItem("upiFraudPaymentHistory",JSON.stringify(list));}catch(e){}
+    data.fromApp=true;
+    render(data);
+    var ls=el("liveStatus"); if(ls) ls.textContent="Live sync: connected — last payment received from phone at "+(data.time||"");
+  }catch(e){}
+}
+function mqttSubscribe(){
+  try{
+    if(typeof mqtt==="undefined") {var ls0=el("liveStatus"); if(ls0) ls0.textContent="Live sync: offline — use the QR link from the phone as backup"; return;}
+    var client=mqtt.connect("wss://broker.hivemq.com:8884/mqtt");
+    client.on("connect",function(){
+      var ls=el("liveStatus"); if(ls) ls.textContent="Live sync: connected — payments from the phone will appear here automatically";
+      try{client.subscribe("payrakshak/demo/payments");}catch(e){}
+    });
+    client.on("message",function(topic,message){
+      try{handleLivePayment(JSON.parse(message.toString()));}catch(e){}
+    });
+    client.on("error",function(){var ls=el("liveStatus"); if(ls) ls.textContent="Live sync: offline — use the QR link from the phone as backup";});
+  }catch(e){}
+}
+
+function loadFromSource(){
+  var params=new URLSearchParams(window.location.search);
+  var h=params.get("h");
+  if(h){
+    try{window._histFromUrl=JSON.parse(decodeURIComponent(h)); try{localStorage.setItem("upiFraudPaymentHistory",JSON.stringify(window._histFromUrl));}catch(e){}}catch(e){}
+  }
+  var d=params.get("d");
+  if(d){
+    try{var data=JSON.parse(decodeURIComponent(d)); data.fromApp=true; render(data); return;}catch(e){}
+  }
+  try{var stored=localStorage.getItem("upiFraudLastPayment"); if(stored){var data2=JSON.parse(stored); data2.fromApp=true; render(data2); return;}}catch(e){}
+  showEmpty();
+}
+loadFromSource();
+renderDatabase();
+mqttSubscribe();
+try{var bc2=new BroadcastChannel("upi-fraud-sync"); bc2.onmessage=function(e){if(e.data && e.data.type==="payment"){renderHistory(null);}};}catch(e){}
+try{window.addEventListener("storage",function(e){if(e.key==="upiFraudPaymentHistory"){renderHistory(null);}});}catch(e){}
+setInterval(function(){
+  var before=window._hist?window._hist.length:-1;
+  var list=getHistory();
+  if(window._histFromUrl) list=list.concat(window._histFromUrl.filter(function(h){return !list.some(function(x){return x.id===h.id;});}));
+  if(list.length!==before){renderHistory(null);}
+},2000);
+</script>
+</body>
+</html>
