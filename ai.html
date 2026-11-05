@@ -225,37 +225,37 @@ var AI_WEIGHTS=[15,20,15,15,10,10,10,5];
 var AI_CATS=["User & Account Reputation","Transaction Behaviour","Receiver Reputation","Device & SIM Intelligence","Location & Time Intelligence","Payment & Scam Pattern Detection","Network & Relationship Analysis","User Reports & Community Intelligence"];
 var AI_TEMPLATES={
 collect:[
-"Sender: Aditya, account since 15 Jan 2022, 312 payments. Receiver: created 1 Nov 2026, 0 payments, 3 verified fraud complaints from 3 different users in 7 days.",
+"Sender: Prachi, account since 15 Jan 2022, 312 payments. Receiver: created 1 Nov 2026, 0 payments, 3 verified fraud complaints from 3 different users in 7 days.",
 "Amount ₹18,500 vs usual ₹200–₹500. First payment to this receiver. Time 2:47 AM, outside the usual daytime pattern.",
 "Receiver reported for fraud, 3 complaints verified, linked to 2 other reported accounts.",
-"Device: Adi's device, first collect approval from this device in 30 days. SIM: same SIM, no PIN reset — the approval itself is the risk.",
+"Device: Prachi's device, first collect approval from this device in 30 days. SIM: same SIM, no PIN reset — the approval itself is the risk.",
 "Last location: College of Engineering Phaltan, Maharashtra. This transaction: Pune, 180 km away, 12 minutes after a Phaltan transaction.",
 "Collect request: user asked to approve a payment pretending to be a refund. Receiving money never needs a PIN.",
 "Receiver connected to a suspicious account network, money to be forwarded within minutes of receipt.",
 "Reports: 6 total, 3 verified, from 3 unique reporters, all in the last 7 days, same refund scam type."],
 simswap:[
-"Sender: Aditya, account since 15 Jan 2022, clean history. Receiver: unknown / new account, 0 payments, 2 verified complaints.",
+"Sender: Prachi, account since 15 Jan 2022, clean history. Receiver: unknown / new account, 0 payments, 2 verified complaints.",
 "Amount ₹49,999 vs usual ₹200–₹500. First payment to this receiver, immediate transfer after account changes.",
 "Receiver: new, no history, 1 verified complaint, linked to a reported account cluster.",
-"Device: NOT Adi's device — new device. SIM: CHANGED TODAY. PIN reset minutes ago. Takeover signals together.",
+"Device: NOT Prachi's device — new device. SIM: CHANGED TODAY. PIN reset minutes ago. Takeover signals together.",
 "Last location: College of Engineering Phaltan, Maharashtra. This transaction: Delhi, 2 minutes later — impossible travel.",
 "Impersonation pattern: caller claimed bank support, urged immediate transfer, urgency tactic used.",
 "Receiver connected to 1 suspicious account cluster, money to be moved onward within minutes.",
 "Reports: 5 in the last 48 hours from different users, 4 verified."],
 mule:[
-"Sender: Aditya, 312 payments. Receivers: all 6 created within the last 7 days, 0 clean history.",
+"Sender: Prachi, 312 payments. Receivers: all 6 created within the last 7 days, 0 clean history.",
 "Amount ₹60,000 split into 6 parts, 6 transfers in 4 minutes vs usual 1 transfer in 10 minutes.",
 "Receivers: 6 new accounts, 0 past payments, 2 verified complaints across the group.",
-"Device: Adi's device. SIM: same SIM. No PIN reset, but a 6-way split on one device in minutes is unusual.",
+"Device: Prachi's device. SIM: same SIM. No PIN reset, but a 6-way split on one device in minutes is unusual.",
 "Location: College of Engineering Phaltan, Maharashtra, but 6 receivers in different cities in 4 minutes — rapid geographical spread.",
 "Money splitting to hide origin — known mule pattern, urgency to complete all 6 transfers quickly.",
 "Network: 1 → 6 fan-out, all 6 accounts linked to each other, money circulating within the group.",
 "Reports: 4 naming 2 of the 6 accounts, 3 verified in the last week."],
 normal:[
-"Sender: Aditya, account since 15 Jan 2022, 312 payments, no fraud reports. Receiver: Kirana Store, since 12 Mar 2021.",
+"Sender: Prachi, account since 15 Jan 2022, 312 payments, no fraud reports. Receiver: Kirana Store, since 12 Mar 2021.",
 "Amount ₹240 vs usual ₹200–₹400. 40th payment to this receiver, normal daytime timing.",
 "Receiver: 40 past payments, 0 reports, clean history.",
-"Device: Adi's device, same device as last 312 payments. SIM: same SIM. No PIN reset.",
+"Device: Prachi's device, same device as last 312 payments. SIM: same SIM. No PIN reset.",
 "Location: College of Engineering Phaltan, Maharashtra — matches the last 40 transactions.",
 "No collect request, no QR scam, no refund claim, no impersonation signal.",
 "Network: single known payee, no fan-out, no mule links.",
@@ -282,10 +282,10 @@ function aiCalcFor(data){
   while(sum>risk){for(var j=0;j<pts.length;j++){if(pts[j]>0){pts[j]--; sum--; break;}}}
   var time=data.time||"";
   var obs=[
-    "Sender: Aditya, account since 15 Jan 2022, 312 payments. Receiver: "+data.name+" ("+data.upi+"), no clean payment history found.",
+    "Sender: Prachi, account since 15 Jan 2022, 312 payments. Receiver: "+data.name+" ("+data.upi+"), no clean payment history found.",
     "Amount ₹"+data.amount+" vs usual ₹200–₹500. First payment to this receiver.",
     "Receiver: "+data.name+", 0 past payments, 1 unverified report, 0 verified complaints yet.",
-    "Device: Adi's device, same device as last payments. SIM: same SIM. No PIN reset.",
+    "Device: Prachi's device, same device as last payments. SIM: same SIM. No PIN reset.",
     "Location: College of Engineering Phaltan, Maharashtra — transaction location differs from the last known location. Time: "+time+".",
     "No collect request or impersonation signal found, but a new receiver with a large amount is itself a scam-pattern flag.",
     "Network: single receiver, no fan-out found, no mule links confirmed yet.",
